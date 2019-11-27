@@ -1,0 +1,40 @@
+version: '{build}'
+clone_depth: 1
+image:
+  - Visual Studio 2015
+
+environment:
+  matrix:
+    - ABI: msvc
+    - ABI: gnu
+
+install:
+  - cmd: >-
+      appveyor DownloadFile https://win.rustup.rs/ -FileName rustup-init.exe
+
+      rustup-init -yv --default-toolchain stable --default-host x86_64-pc-windows-%ABI%
+
+      set PATH=%PATH%;%USERPROFILE%\.cargo\bin
+
+      set PATH=%PATH%;C:\mingw-w64\x86_64-7.2.0-posix-seh-rt_v5-rev1\mingw64\bin
+
+      rustc -V
+
+      cargo -V
+
+      g++ --version
+
+build_script:
+  - cmd: >-
+      cargo build --example=music_ogg
+
+after_build:
+  - cmd: >-
+      mkdir tmp
+
+      copy target\debug\examples\music_ogg.exe tmp\music_ogg.exe
+
+      powershell.exe -nologo -noprofile -command "& { Add-Type -A 'System.IO.Compression.FileSystem'; [IO.Compression.ZipFile]::CreateFromDirectory('tmp', 'music_ogg.zip'); }"
+
+artifacts:
+- path: "music_ogg.zip"
